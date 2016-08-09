@@ -15,14 +15,14 @@ void main(void)
 
 
 	/****** block comment */
-	if (vUV != 1.0 ) {
+	if (vUV     != 1.0 ) {
 		/****** another block comment ******/
 		float test = 1.0;
 	} else {
-		float test2 = 2.0;
-	}
+		float test2 = 2.0;/*
+	*/}
 
-	float x = 1.0; /* comment *//* 2ndComment */ float y = 1.0; /* ThirdComment*/ // float z = 1.0;
+	float x = 1.0; /* comment *//* 2ndComment */  float y = 1.0; /* ThirdComment*/ // float z = 1.0;
 	// float z = 2.0;
 	/*
 

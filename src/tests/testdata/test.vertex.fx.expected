@@ -13,7 +13,7 @@
 "} else {"+
 "float test2 = 2.0;"+
 "}"+
-"float x = 1.0;  float y = 1.0;"+
+"float x = 1.0; float y = 1.0;"+
 "float z = 4.0;"+
 "gl_Position = vPos;"+
 "}";

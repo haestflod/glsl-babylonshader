@@ -12,13 +12,27 @@ namespace glsl_babylon.classes
     {
         // Courtesy of James0x57
         Regex m_lineComment = new Regex(@"\/\/.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        // This is to separate instances of *//* that the lineComment would remove completly
+        // No one probably writes /* comment *//* second comment */ but hey!
+        Regex m_twoBlockComments = new Regex(@"\*\/\/\*");
+        // Replace multiple spaces with 1
+        // For example the twoBlockComments regex adds spaces 
+        // Source: http://stackoverflow.com/questions/206717/how-do-i-replace-multiple-spaces-with-a-single-space-in-c
+        Regex m_multipleSpaces = new Regex("[ ]{2,}");        
         // If is inside a block comment currently or not
         bool m_insideBlockComment = false;
 
+        // How many files in total has been tried to convert
         public int Converted { get; set; } = 0;
+        // How many succeeded
         public int Success { get; set; } = 0;
+        // How many failed
         public int Failed { get; set; } = 0;
 
+        /// <summary>
+        /// Takes the action string and splits it and then tries to convert both folders and files.
+        /// </summary>
+        /// <param name="a_action"></param>
         public void Convert(string a_action)
         {
             string[] parts = a_action.Split(' ');
@@ -27,18 +41,16 @@ namespace glsl_babylon.classes
 
             for (int i = 1; i < parts.Length; ++i)
             {
-                // TODO: Check if folder
-
-                // TODO: Check if files exist with .vertex.fx  or .fragment.fx
-                Converted++;
-                if (ConvertFile(parts[i]))
-                {
-                    Success++;
-                }
-                else
-                {
-                    Failed++;   
-                }
+                // If folder "test" exists it will convert that.
+                // If files with test.vertex.fx | test.fragment.fx exists it will convert those  
+                // Then it will convert the whole testfolder and the test.vertex.fx & test.fragment.fx
+                string part = parts[i];
+                // Convert a potential folder
+                bool convertedFolder = TryConvertFolder(part);
+                // Check if the part ends with .fx and it wasn't a folder called *.fx      
+                // Also check if it ends with .fragment or .vertex          
+                bool convertedFiles = TryConvertFxFile(part);  
+                 
             }
 
             if (parts.Length > 1)
@@ -51,8 +63,29 @@ namespace glsl_babylon.classes
             }
         }
 
+        /// <summary>
+        /// Converts all files in a directory and recursively too.
+        /// </summary>
+        /// <param name="a_foldername"></param>
+        /// <returns></returns>
+        public bool TryConvertFolder(string a_foldername)
+        {
+            if (Directory.Exists( a_foldername))
+            {
+
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Converts a file 
+        /// </summary>
+        /// <param name="a_filename"></param>
+        /// <returns></returns>
         public bool ConvertFile(string a_filename)
         {
+            Converted++;
             if (File.Exists(a_filename))
             {
                 List<string> lines = new List<string>();
@@ -85,6 +118,8 @@ namespace glsl_babylon.classes
                             sw.Write(GetOutput(lines));
                         }
                     }
+                    // Before returning true increase successful convertion!
+                    Success++;
                     return true;
                 }
                 
@@ -93,32 +128,41 @@ namespace glsl_babylon.classes
             else
             {
                 Application.PrintLine("File did not exist: " + a_filename, ConsoleColor.Red);                
-            }  
-
+            }
+            // If failing then increase failures
+            Failed++;
             return false;
         }
 
+        /// <summary>
+        /// Get the babylon shaderstore output
+        /// </summary>
+        /// <param name="a_values"></param>
+        /// <returns></returns>
         public string GetOutput(List<string> a_values)
         {            
             StringBuilder sb = new StringBuilder();
 
             for (int i = 0; i < a_values.Count; i++)
-            {                
+            {
+                string value = m_multipleSpaces.Replace(a_values[i], " ");
                 // Reason for adding Environment.NewLine is so that when you copy-paste into your editor it'll be on a new line!
                 if (i < a_values.Count - 1)
                 {
-                    // "text"+
-                    sb.AppendFormat("\"{0}\"+{1}", a_values[i], Environment.NewLine);
+                    // "glsl"+
+                    sb.AppendFormat("\"{0}\"+{1}", value, Environment.NewLine);
                 }
                 else
                 {
-                    // "text";
-                    sb.AppendFormat("\"{0}\";", a_values[i]);
+                    // "glsl";
+                    sb.AppendFormat("\"{0}\";", value);
                 }                
             }
 
             return sb.ToString();
         }
+
+        
 
         private string ParseLine( string a_line)
         {            
@@ -126,6 +170,7 @@ namespace glsl_babylon.classes
             // If not a block comment is active
             if (!m_insideBlockComment)
             {
+                a_line = m_twoBlockComments.Replace(a_line, "*/ /*");
                 a_line = m_lineComment.Replace(a_line, "");
                 a_line = a_line.Trim();
 
@@ -173,6 +218,42 @@ namespace glsl_babylon.classes
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Try first to convert input filename
+        /// If that file doesn't exist then add .fragment.fx and .vertex.fx and try those combinations
+        /// </summary>
+        /// <param name="a_file"></param>
+        /// <returns></returns>
+        private bool TryConvertFxFile(string a_file)
+        {
+            // If absolute path to file.
+            // Like shader.glsl           
+            if (File.Exists( a_file))
+            {
+                return ConvertFile(a_file);
+            }
+            else
+            {
+                // If the file didn't exist then add .vertex.fx and .fragment.fx
+                string vertexShader = a_file + ".vertex.fx";
+                string fragmentShader = a_file + ".fragment.fx";
+
+                bool vertexResult = false;
+                bool fragmentResult = false;
+
+                if (File.Exists( vertexShader ))
+                {
+                    vertexResult = ConvertFile(vertexShader);
+                }
+                if (File.Exists(fragmentShader))
+                {
+                    fragmentResult = ConvertFile(fragmentShader);
+                }
+                // Returns true if either vertex of fragment succeeded
+                return vertexResult || fragmentResult;
+            }           
         }
     }
 }
