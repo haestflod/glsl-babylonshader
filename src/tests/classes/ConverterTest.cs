@@ -45,6 +45,40 @@ namespace tests.classes
         }
 
         [TestMethod]
+        public void CheckArgumentsTest()
+        {
+
+            // Tests for Recursive mode
+            m_converter.CheckAndCleanArguments("c --r");
+            Assert.IsTrue(m_converter.DoRecursiveFolders, "Should do recursive folders");
+            Assert.IsTrue(!m_converter.DoMinify, "Should not minify output");
+
+            m_converter.CheckAndCleanArguments("c --rr -r r");
+            Assert.IsTrue(!m_converter.DoRecursiveFolders, "Should not do recursive folders");
+            Assert.IsTrue(!m_converter.DoMinify, "Should not minify output 2");
+
+            m_converter.CheckAndCleanArguments("c --minify");
+            Assert.IsTrue(m_converter.DoMinify, "Should minify output");
+
+            m_converter.CheckAndCleanArguments("c --r --minify");
+            Assert.IsTrue(m_converter.DoRecursiveFolders && m_converter.DoMinify, "Should do recursive folders and minify");
+            
+
+            // Tests for output
+            string result = m_converter.CheckAndCleanArguments("c test test2");
+            Assert.IsTrue(result == "test test2", "Result should be as expected");
+
+            result = m_converter.CheckAndCleanArguments("c");
+            Assert.IsTrue(result == AppContext.BaseDirectory, "Result should be as expected 2");
+
+            result = m_converter.CheckAndCleanArguments("c --r");
+            Assert.IsTrue(result == AppContext.BaseDirectory, "Result should be as expected 3");
+
+            result = m_converter.CheckAndCleanArguments("c test --r --minify test2  test3");
+            Assert.IsTrue(result == "test test2 test3", "Result should be as expected 4");
+        }
+
+        [TestMethod]
         public void ConvertTest()
         {
             m_converter.Convert("c");
@@ -80,6 +114,42 @@ namespace tests.classes
             string expectedContent = TestFileHelper.GetFileContent(TestFileExpected);
             
             Assert.IsTrue(resultContent == expectedContent, "Converted content should be expected content");          
+        }
+
+        [TestMethod]
+        public void GetOutputTest()
+        {
+            List<string> input = new List<string>() {
+                "uniform vec3 uTest",
+                "void main()",
+                "{",
+                "gl_Position = vPosition",
+                "}"
+            };
+
+            string newline = Environment.NewLine;
+
+            string expectedPretty = string.Format("\"uniform vec3 uTest\"+{0}"
+                + "\"void main()\"+{0}"
+                + "\"{{\"+{0}"
+                + "\"gl_Position = vPosition\"+{0}"
+                + "\"}}\";", newline);
+
+            string expectedMinified = string.Format("\"uniform vec3 uTest\"+"
+                + "\"void main()\"+"
+                + "\"{{\"+"
+                + "\"gl_Position = vPosition\"+"
+                + "\"}}\";");
+
+            // Pretty print tests
+            m_converter.DoMinify = false;
+            string result = m_converter.GetOutput(input);
+            Assert.IsTrue(result == expectedPretty, "result should equal expected pretty");
+
+            // Minification tests
+            m_converter.DoMinify = true;
+            result = m_converter.GetOutput(input);
+            Assert.IsTrue(result == expectedMinified, "result should equal expected minified");
         }
 
     }

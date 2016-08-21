@@ -10,6 +10,10 @@ namespace glsl_babylon.classes
 {
     public class Converter
     {
+        public const string RecursiveAction = "--r";
+
+        public const string MinifyAction = "--minify";
+
         // Courtesy of James0x57
         Regex m_lineComment = new Regex(@"\/\/.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
         // This is to separate instances of *//* that the lineComment would remove completly
@@ -30,27 +34,89 @@ namespace glsl_babylon.classes
         public int Failed { get; set; } = 0;
 
         /// <summary>
-        /// Takes the action string and splits it and then tries to convert both folders and files.
+        /// If convertFolder should do it recursively or just the input folder
         /// </summary>
-        /// <param name="a_action"></param>
-        public void Convert(string a_action)
+        public bool DoRecursiveFolders { get; set; } = false;
+        /// <summary>
+        /// If GetOutput should add Environment.NewLine or not
+        /// </summary>
+        public bool DoMinify { get; set; } = false;
+
+        /// <summary>
+        /// Removed the first part 'c' 
+        /// Removes any argument actions like --r
+        /// </summary>
+        /// <param name="a_arguments"></param>
+        /// <returns></returns>
+        public string CheckAndCleanArguments( string a_arguments)
         {
-            string[] parts = a_action.Split(' ');
+            string[] parts = a_arguments.Split(' ');
+
+            // Reset options before each Convert
+            DoRecursiveFolders = false;
+            DoMinify = false;
+
+            string output = "";
+
+            for (int i = 1; i < parts.Length; i++)
+            {
+                string part = parts[i];
+
+                if (part == RecursiveAction)
+                {
+                    DoRecursiveFolders = true;
+                }
+                else if (part == MinifyAction)
+                {
+                    DoMinify = true;
+                }
+                else if (part != "")
+                {
+                    // On first part don't add a " "
+                    if (output == "")
+                    {
+                        output = part;
+                    }
+                    // Add the space for all consecutive ones!
+                    else
+                    {
+                        output += " " + part;
+                    }
+                }
+            }
+
+            if (output == "")
+            {
+                // Get current working directory
+                output = AppContext.BaseDirectory;                
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Takes the arguments string and splits it and then tries to convert both folders and files.
+        /// </summary>
+        /// <param name="a_arguments"></param>
+        public void Convert(string a_arguments)
+        {
+            string[] parts = CheckAndCleanArguments(a_arguments).Split(' ');
 
             Converted = Success = Failed = 0;       
 
-            for (int i = 1; i < parts.Length; ++i)
+            for (int i = 0; i < parts.Length; ++i)
             {
                 // If folder "test" exists it will convert that.
                 // If files with test.vertex.fx | test.fragment.fx exists it will convert those  
                 // Then it will convert the whole testfolder and the test.vertex.fx & test.fragment.fx
                 string part = parts[i];
+               
                 // Convert a potential folder
                 bool convertedFolder = TryConvertFolder(part);
                 // Check if the part ends with .fx and it wasn't a folder called *.fx      
                 // Also check if it ends with .fragment or .vertex          
-                bool convertedFiles = TryConvertFxFile(part);  
-                 
+                bool convertedFiles = TryConvertFxFile(part);
+                
             }
 
             if (parts.Length > 1)
@@ -149,8 +215,16 @@ namespace glsl_babylon.classes
                 // Reason for adding Environment.NewLine is so that when you copy-paste into your editor it'll be on a new line!
                 if (i < a_values.Count - 1)
                 {
-                    // "glsl"+
-                    sb.AppendFormat("\"{0}\"+{1}", value, Environment.NewLine);
+                    if (!DoMinify)
+                    {
+                        // "glsl"+\n
+                        sb.AppendFormat("\"{0}\"+{1}", value, Environment.NewLine);
+                    }
+                    else
+                    {
+                        // "glsl"+
+                        sb.AppendFormat("\"{0}\"+", value);
+                    }                   
                 }
                 else
                 {
