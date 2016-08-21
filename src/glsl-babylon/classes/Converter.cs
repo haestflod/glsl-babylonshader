@@ -8,7 +8,7 @@ using System.Text;
 
 namespace glsl_babylon.classes
 {
-    public class Converter
+    public class Converter : IConverter
     {
         public const string RecursiveAction = "--r";
 
@@ -38,6 +38,12 @@ namespace glsl_babylon.classes
         /// </summary>
         public bool DoRecursiveFolders { get; set; } = false;
         /// <summary>
+        /// How many folders deep to do the recursive action.
+        /// For example if a user mistakenly writes "/" well we don't want to loop through whole system!
+        /// -1 is until no more folders
+        /// </summary>
+        public int RecursiveDepth { get; set; } = 2;
+        /// <summary>
         /// If GetOutput should add Environment.NewLine or not
         /// </summary>
         public bool DoMinify { get; set; } = false;
@@ -65,6 +71,23 @@ namespace glsl_babylon.classes
                 if (part == RecursiveAction)
                 {
                     DoRecursiveFolders = true;
+                    // Check for potential depth
+                    if (i + 1 < parts.Length)
+                    {
+                        string depthpart = parts[i + 1];
+                        int depth;
+                        // Could in theory do i++ but if a file was a digit it'd get removed from output
+                        if (int.TryParse(depthpart, out depth))
+                        {
+                            // -1, -2, -3  all mean the same thing
+                            if (depth < 0)
+                            {
+                                depth = -1;
+                            }
+                            RecursiveDepth = depth;
+                        }                      
+                    }
+
                 }
                 else if (part == MinifyAction)
                 {
@@ -102,47 +125,41 @@ namespace glsl_babylon.classes
         {
             string[] parts = CheckAndCleanArguments(a_arguments).Split(' ');
 
-            Converted = Success = Failed = 0;       
+            Converted = Success = Failed = 0;
 
-            for (int i = 0; i < parts.Length; ++i)
+            // Try catch since we're doing IO stuff!
+            try
             {
-                // If folder "test" exists it will convert that.
-                // If files with test.vertex.fx | test.fragment.fx exists it will convert those  
-                // Then it will convert the whole testfolder and the test.vertex.fx & test.fragment.fx
-                string part = parts[i];
-               
-                // Convert a potential folder
-                bool convertedFolder = TryConvertFolder(part);
-                // Check if the part ends with .fx and it wasn't a folder called *.fx      
-                // Also check if it ends with .fragment or .vertex          
-                bool convertedFiles = TryConvertFxFile(part);
-                
-            }
+                for (int i = 0; i < parts.Length; ++i)
+                {
+                    // If folder "test" exists it will convert that.
+                    // If files with test.vertex.fx | test.fragment.fx exists it will convert those  
+                    // Then it will convert the whole testfolder and the test.vertex.fx & test.fragment.fx
+                    string part = parts[i];
+                    
+                    // Convert a potential folder
+                    bool convertedFolder = TryConvertFolder(part, 0);                    
+                    
+                    // Check if the part ends with .fx and it wasn't a folder called *.fx      
+                    // Also check if it ends with .fragment or .vertex          
+                    bool convertedFiles = TryConvertFxFile(part);
 
-            if (parts.Length > 1)
+                }
+
+                if (Converted > 0)
+                {
+                    Application.PrintLine(String.Format("Converted {0} files. Succesfully converted {1}", Converted, Success), ConsoleColor.Green);
+                }
+                else
+                {
+                    Application.PrintLine("There were no files as input.", ConsoleColor.Yellow);
+                }
+            }
+            catch( Exception e)
             {
-                Application.PrintLine(String.Format("Converted {0} files. Succesfully converted {1}", Converted, Success), ConsoleColor.Green);
-            }
-            else
-            {
-                Application.PrintLine("There were no files as input.", ConsoleColor.Yellow);
-            }
-        }
-
-        /// <summary>
-        /// Converts all files in a directory and recursively too.
-        /// </summary>
-        /// <param name="a_foldername"></param>
-        /// <returns></returns>
-        public bool TryConvertFolder(string a_foldername)
-        {
-            if (Directory.Exists( a_foldername))
-            {
-
-            }
-
-            return false;
-        }
+                Application.PrintLine("Unexpected error: " + e.Message, ConsoleColor.Red);
+            }            
+        }            
 
         /// <summary>
         /// Converts a file 
@@ -198,7 +215,7 @@ namespace glsl_babylon.classes
             // If failing then increase failures
             Failed++;
             return false;
-        }
+        }        
 
         /// <summary>
         /// Get the babylon shaderstore output
@@ -236,7 +253,42 @@ namespace glsl_babylon.classes
             return sb.ToString();
         }
 
-        
+        /// <summary>
+        /// Converts all files in a directory and recursively too.
+        /// </summary>
+        /// <param name="a_foldername"></param>
+        /// <returns></returns>
+        public bool TryConvertFolder(string a_foldername, int a_depth)
+        {
+            bool fileSuccess = false;
+            bool folderSuccess = false;
+            if (Directory.Exists( a_foldername))
+            {
+                // Get all .fx files
+                string[] files = Directory.GetFiles(a_foldername, "*.fx");
+
+                foreach (string file in files)
+                {
+                    if ( ConvertFile(file))
+                    {
+                        fileSuccess = true;
+                    }
+                }
+
+                if (DoRecursiveFolders && (a_depth == -1 || a_depth < RecursiveDepth))
+                {
+                    string[] subdirectories = Directory.GetDirectories(a_foldername);
+
+                    foreach (string subdirectory in subdirectories)
+                    {
+                        // Recursively call this function and increase depth by 1
+                        TryConvertFolder(subdirectory, a_depth + 1);
+                    }
+                }
+            }            
+
+            return fileSuccess || folderSuccess;
+        }
 
         private string ParseLine( string a_line)
         {            

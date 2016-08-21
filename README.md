@@ -13,7 +13,10 @@ There 2 different modes for the application.
 To convert either a file or folder use the action "c [arguments]"
 The arguments are:
 * "path": The filepath or folderpath. Can be used multiple times for many files / folders at same time.
-* "--r": Enables recursive folder search.
+* "--r [depth]": Enables recursive folder search. 
+	** [Depth] is optional and is amount of folders to iterate over. 
+	** Default depth is 2. 
+	** Depth -1 is unlimited amount.
 * "--minify": "Minifies the output by not adding \n or \r\n depending on environment"
 
 #### Examples

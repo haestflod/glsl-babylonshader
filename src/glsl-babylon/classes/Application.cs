@@ -23,11 +23,16 @@ namespace glsl_babylon.classes
         private Action SelectedAction { get; set; }
         private string ActionValue { get; set; }
 
-        private Converter m_converter;
+        private IConverter m_converter;
 
         public Application()
         {
             m_converter = new Converter();
+        }
+
+        public Application( IConverter a_converter)
+        {
+            m_converter = a_converter;
         }
 
         public void Run()
