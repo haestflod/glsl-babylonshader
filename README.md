@@ -14,8 +14,8 @@ To convert either a file or folder use the action "c [arguments]"
 The arguments are:
 * "path": The filepath or folderpath. Can be used multiple times for many files / folders at same time.
 * "--r [depth]": Enables recursive folder search. 
-    * Depth is optional and is the amount of folders to iterate over. 
-    * Default depth is 2. 
+	* Depth is optional and is the amount of folders to iterate over. 
+	* Default depth is 2. 
 	* Depth -1 is unlimited amount.
 * "--minify": "Minifies the output by not adding \n or \r\n depending on environment"
 
@@ -32,5 +32,15 @@ To watch a file or folder use the action "w [arguments]"
 * Install the .NET Core SDK
 * Might have to reboot to get access to "dotnet" for your cmd.
 * Run "dotnet --info" to check the current version. For example "1.0.0-preview3-003223" is what we're after.
-* Change global.json sdk.version property if it doesn't compile 
+* Change the json property **sdk.version** in global.json to the "1.0.0-preview..." value if it doesn't compile 
  
+ ### Publishing Visual studio
+ * goto **glsl-babylon/bin/release** folder
+ * You can remove **file glsl-babylon.runtimeconfig.dev** 
+ * Open cmd and run "dotnet glsl-babylon.dll" 
+
+ ### Publishing with dotnet cli
+ * Go to src/glsl-babylon with your console app.
+ * Run command "dotnet publish"
+ * Goto folder from bin/debug/publish
+ * Run command "dotnet glsl-babylon.dll"

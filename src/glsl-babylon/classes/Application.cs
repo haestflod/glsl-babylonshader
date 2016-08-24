@@ -15,24 +15,31 @@ namespace glsl_babylon.classes
         {
             None,
             Exit,
-            ConvertFile,
-            ConvertFolder,
-            WatchFolder               
+            Convert,            
+            Watch               
         }
 
         private Action SelectedAction { get; set; }
-        private string ActionValue { get; set; }
+        /// <summary>
+        /// The selected arguments when choosing an action.
+        /// Also includes the action itself
+        /// </summary>
+        private string Arguments { get; set; }
 
         private IConverter m_converter;
+        private Watcher m_watcher;
 
         public Application()
         {
             m_converter = new Converter();
+            m_watcher = new Watcher(m_converter);
         }
 
-        public Application( IConverter a_converter)
+        // For Dependancy injection!
+        public Application( IConverter a_converter, Watcher a_watcher)
         {
             m_converter = a_converter;
+            m_watcher = a_watcher;
         }
 
         public void Run()
@@ -65,9 +72,10 @@ namespace glsl_babylon.classes
                 
 
                 Console.Write("Action: ");
-                ActionValue = Console.ReadLine();
+                Arguments = Console.ReadLine();
 
-                string[] parts = ActionValue.Split(' ');
+                // Get the action part
+                string[] parts = Arguments.Split(' ');
 
                 switch (parts[0])
                 {
@@ -75,7 +83,10 @@ namespace glsl_babylon.classes
                         SelectedAction = Action.Exit;
                         break;
                     case ConvertAction:
-                        SelectedAction = Action.ConvertFile;
+                        SelectedAction = Action.Convert;
+                        break;
+                    case WatchAction:
+                        SelectedAction = Action.Watch;
                         break;
                     default:
                         Console.WriteLine("No such action exists");
@@ -88,12 +99,11 @@ namespace glsl_babylon.classes
         {
             switch (SelectedAction)  
             {
-                case Action.ConvertFile:
-                    m_converter.Convert(ActionValue);
+                case Action.Convert:
+                    m_converter.Convert(Arguments);
                     break;
-                case Action.ConvertFolder:
-                    break;
-                case Action.WatchFolder:
+                case Action.Watch:
+                    m_watcher.Watch(Arguments);
                     break;
             }
         }

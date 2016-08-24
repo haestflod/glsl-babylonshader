@@ -8,7 +8,8 @@ namespace glsl_babylon.classes
         string CheckAndCleanArguments(string a_arguments);
         void Convert(string a_arguments);
         bool ConvertFile(string a_filename);
-        string GetOutput(List<string> a_values);
+        string GetOutput(List<string> a_values, string a_storeName);
+        string GetShaderStoreName(string a_filename);
         bool TryConvertFolder(string a_foldername, int a_depth);
     }
 }

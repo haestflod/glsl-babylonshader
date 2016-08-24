@@ -33,6 +33,7 @@ namespace glsl_babylon.classes
         // How many failed
         public int Failed { get; set; } = 0;
 
+        public bool AddShaderStoreName { get; set; } = true;
         /// <summary>
         /// If convertFolder should do it recursively or just the input folder
         /// </summary>
@@ -198,7 +199,8 @@ namespace glsl_babylon.classes
                     {
                         using (StreamWriter sw = new StreamWriter(fs))
                         {
-                            sw.Write(GetOutput(lines));
+                            string shaderStoreName = GetShaderStoreName( a_filename );
+                            sw.Write(GetOutput(lines, shaderStoreName));
                         }
                     }
                     // Before returning true increase successful convertion!
@@ -215,16 +217,25 @@ namespace glsl_babylon.classes
             // If failing then increase failures
             Failed++;
             return false;
-        }        
-
+        }         
+              
         /// <summary>
         /// Get the babylon shaderstore output
         /// </summary>
         /// <param name="a_values"></param>
         /// <returns></returns>
-        public string GetOutput(List<string> a_values)
+        public string GetOutput(List<string> a_values, string a_storeName)
         {            
             StringBuilder sb = new StringBuilder();
+
+            if (a_storeName != "")
+            {
+                sb.AppendFormat("BABYLON.Effect.ShadersStore[\"{0}\"]=", a_storeName);
+                if (!DoMinify)
+                {
+                    sb.Append(Environment.NewLine);
+                }
+            }
 
             for (int i = 0; i < a_values.Count; i++)
             {
@@ -251,6 +262,41 @@ namespace glsl_babylon.classes
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Gets the shaderStore name for an input file.
+        /// Input: exampleName.fragment.fx
+        /// Output: ExampleNameFragmentShader
+        /// </summary>
+        /// <param name="a_filename"></param>
+        /// <returns></returns>
+        public string GetShaderStoreName( string a_filename)
+        {
+            string name = "";
+
+            if (AddShaderStoreName)
+            {
+                a_filename = a_filename.Split(new char[] { '/', '\\' }).Last();
+                string[] parts = a_filename.Split('.');
+                // Length - 1 to discard fx since it's replaced by Shader
+                for (int i = 0; i < parts.Length - 1; i++)
+                {
+                    string part = parts[i];
+                    
+                        // Capitalize the first character
+                        name += char.ToUpper(part[0]);
+
+                    if (part.Length > 1)
+                    {
+                        // Add the rest
+                        name += part.Substring(1);
+                    }                      
+                }
+                name += "Shader";
+            }
+
+            return name;
         }
 
         /// <summary>

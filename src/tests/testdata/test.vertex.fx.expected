@@ -1,3 +1,4 @@
+BABYLON.Effect.ShadersStore["TestVertexShader"]=
 "attribute vec3 aPosition;"+
 "attribute vec2 aUV;"+
 "varying vec3 vPosition;"+
