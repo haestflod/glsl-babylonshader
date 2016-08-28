@@ -15,6 +15,8 @@ namespace glsl_babylon.classes
 
         private Dictionary<string, FileSystemWatcher> m_watchedPaths;
 
+        private FileSystemWatcher watcher;
+
         public Watcher(IConverter a_converter)
         {
             m_converter = a_converter;
@@ -30,23 +32,25 @@ namespace glsl_babylon.classes
         {
             // Make sure it's not already watched
             if (!m_watchedPaths.ContainsKey( a_path ))
-            {
+            {                
                 if (Directory.Exists( a_path))
                 {
-                    FileSystemWatcher watcher = new FileSystemWatcher();
+                    //FileSystemWatcher watcher = new FileSystemWatcher();
+                    watcher = new FileSystemWatcher();
                     watcher.Path = a_path;
                     // Only watch .fx files
                     watcher.Filter = "*.fx";
 
-                    watcher.NotifyFilter = NotifyFilters.LastWrite;
-                        //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
-
-                    watcher.Created += new FileSystemEventHandler(OnChanged);
+                    watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.LastAccess
+                        | NotifyFilters.FileName | NotifyFilters.DirectoryName
+                        | NotifyFilters.Attributes;
+                    watcher.EnableRaisingEvents = true;
+                    
                     watcher.Changed += new FileSystemEventHandler(OnChanged);
                     
                     // If the file is deleted or renamed then delete the old output
                     watcher.Deleted += new FileSystemEventHandler(OnRemoved);
-                    watcher.Renamed += new RenamedEventHandler(OnRemoved);
+                    watcher.Renamed += new RenamedEventHandler(OnRenamed);
 
                     m_watchedPaths.Add(a_path, watcher);
                 }
@@ -63,6 +67,7 @@ namespace glsl_babylon.classes
             string[] parts = a_arguments.Split(' ');
             
             string output = "";
+            bool hasAddedRoot = false;
 
             for (int i = 1; i < parts.Length; i++)
             {
@@ -70,6 +75,13 @@ namespace glsl_babylon.classes
                 
                 if (part != "")
                 {
+                    // For / add the current folder path not the root for linux!
+                    if (part == "/" && !hasAddedRoot)
+                    {
+                        output = AppContext.BaseDirectory;
+                        hasAddedRoot = true;
+                    }
+
                     // On first part don't add a " "
                     if (output == "")
                     {
@@ -77,16 +89,17 @@ namespace glsl_babylon.classes
                     }
                     // Add the space for all consecutive ones!
                     else
-                    {
+                    {                        
                         output += " " + part;
                     }
                 }
             }
 
-            if (output == "")
+            if (output == "" && !hasAddedRoot)
             {
                 // Get current working directory
                 output = AppContext.BaseDirectory;
+                hasAddedRoot = true;
             }
 
             return output;
@@ -107,21 +120,39 @@ namespace glsl_babylon.classes
         }  
 
         private void OnChanged(object source, FileSystemEventArgs e)
-        {
-            Console.WriteLine("Changed:");
-            Console.WriteLine(e.FullPath);
+        {            
+            m_converter.ConvertFile(e.FullPath);
         }
 
+        // This happens 2 times everytime you save the a file, dunno why but it does!
         private void OnRemoved(object source, FileSystemEventArgs e)
-        {
-            Console.WriteLine("Removed:");
-            Console.WriteLine(e.FullPath);
+        {          
+            if (!File.Exists( e.FullPath ))
+            {
+                string outputPath = e.FullPath + ".output";
+                // Get output file
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+            }                        
         }
 
-        private void OnRenamed(object source, RenamedEventHandler e)
-        {
-            Console.WriteLine("Renamed:");
-            Console.WriteLine();
+        private void OnRenamed(object source, RenamedEventArgs e)
+        {   
+            if (!e.OldName.EndsWith("~"))
+            {
+                string oldOutput = e.OldFullPath + ".output";
+                if ( File.Exists( oldOutput  ))
+                {
+                    File.Delete(oldOutput);
+                }
+
+                // No need to convert after renaming becahse onChanged will happen
+                //m_converter.ConvertFile(e.FullPath);
+
+            }
+            
         }
     }
 }

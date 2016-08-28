@@ -1,13 +1,15 @@
 # glsl-babylonshader
 Converts glsl shader code into copy-pastable babylon shaderstore output.
 
-This app is more appropriate as a gulp or grunt task instead of an executable but I wanted to experiment with .NET Core for a small project!
+This app is probably more appropriate as a gulp or grunt task instead of an executable but I wanted to experiment with .NET Core for a small project!
 
 ## How to use guide
 
 There are 2 different modes for the application.
 1. Convert a specific file / folder
 2. Watch a file / folder for changes
+
+#### Examples
 
 ### Convert specific file / folder
 To convert either a file or folder use the action "c [arguments]"
@@ -35,9 +37,9 @@ To watch a file or folder use the action "w [arguments]"
 * Change the json property **sdk.version** in global.json to the "1.0.0-preview..." value if it doesn't compile 
  
  ### Publishing Visual studio
- * goto **glsl-babylon/bin/release** folder
+ * Goto **glsl-babylon/bin/release** folder
  * You can remove **file glsl-babylon.runtimeconfig.dev** 
- * Open cmd and run "dotnet glsl-babylon.dll" 
+ * Open cmd, navigate to folder where the dll is and run "dotnet glsl-babylon.dll" 
 
  ### Publishing with dotnet cli
  * Go to src/glsl-babylon with your console app.

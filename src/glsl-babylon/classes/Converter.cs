@@ -176,7 +176,7 @@ namespace glsl_babylon.classes
                 using (FileStream fs = new FileStream(a_filename, FileMode.Open))
                 {
                     // Seems .net core doesn't take a filename as input?             
-                    using (StreamReader sr = new StreamReader(fs))
+                    using (StreamReader sr = new StreamReader(fs, Encoding.UTF8))
                     {
                         while (!sr.EndOfStream)
                         {
@@ -195,9 +195,12 @@ namespace glsl_babylon.classes
                 // If there are no lines it failed to convert
                 if (lines.Count > 0)
                 {
+                    
                     using (FileStream fs = new FileStream(a_filename + ".output", FileMode.Create))
                     {
-                        using (StreamWriter sw = new StreamWriter(fs))
+                        // TODO: Implement automatic encoding detection?
+                        // http://stackoverflow.com/questions/3825390/effective-way-to-find-any-files-encoding
+                        using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
                         {
                             string shaderStoreName = GetShaderStoreName( a_filename );
                             sw.Write(GetOutput(lines, shaderStoreName));
