@@ -20,11 +20,10 @@ namespace tests.testhelpers.Interfaces
         public int ConvertCalls { get; set; } = 0;
         public int ConvertFileCalls { get; set; } = 0;
 
-
-        public string CheckAndCleanArguments(string a_arguments)
-        {
-            return CheckAndCleanArgumentsResult;
+        public void ParseSettings(ConverterSettings a_settings)
+        {            
         }
+
         public void Convert(string a_arguments)
         {
             ConvertCalls++;
@@ -34,14 +33,7 @@ namespace tests.testhelpers.Interfaces
             ConvertFileCalls++;
             return ConvertFileResult;
         }
-        public string GetOutput(List<string> a_values, string a_storeName)
-        {
-            return GetOutputResult;
-        }
-        public string GetShaderStoreName(string a_filename)
-        {
-            return GetShaderStoreNameResult;
-        }
+        
         public bool TryConvertFolder(string a_foldername, int a_depth)
         {
             return TryConvertFolderResult;

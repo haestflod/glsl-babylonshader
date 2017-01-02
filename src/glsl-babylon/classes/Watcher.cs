@@ -146,11 +146,7 @@ namespace glsl_babylon.classes
                 if ( File.Exists( oldOutput  ))
                 {
                     File.Delete(oldOutput);
-                }
-
-                // No need to convert after renaming becahse onChanged will happen
-                //m_converter.ConvertFile(e.FullPath);
-
+                }              
             }
             
         }

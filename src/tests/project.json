@@ -1,12 +1,15 @@
 {
   "version": "1.0.0-*",
-  "testRunner": "mstest",  
-  "dependencies": {
-    "dotnet-test-mstest": "1.0.1-preview",
-    "glsl-babylon": "1.0.0-*",   
-    "MSTest.TestFramework": "1.0.1-preview"
-  },
-
+  "testRunner": "mstest",
+    "dependencies": {
+        "dotnet-test-mstest": "1.0.1-preview",
+        "glsl-babylon": "1.0.0-*",
+        "Microsoft.NETCore.App": "1.1.0",
+        "MSTest.TestFramework": "1.0.1-preview"
+    },
+    "runtimes": {
+        "win7-x64": {}
+    },
   "frameworks": {
     "netcoreapp1.0": {
       "imports": [
@@ -14,11 +17,7 @@
         "portable-net45+win8"
       ],
   
-      "dependencies": {
-        "Microsoft.NETCore.App": {
-          "version": "1.0.0",
-          "type": "platform"
-        }
+      "dependencies": {        
       }
     }
   }

@@ -9,22 +9,9 @@ using System.Text;
 namespace glsl_babylon.classes
 {
     public class Converter : IConverter
-    {
-        public const string RecursiveAction = "--r";
-
-        public const string MinifyAction = "--minify";
-
-        // Courtesy of James0x57
-        Regex m_lineComment = new Regex(@"\/\/.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
-        // This is to separate instances of *//* that the lineComment would remove completly
-        // No one probably writes /* comment *//* second comment */ but hey!
-        Regex m_twoBlockComments = new Regex(@"\*\/\/\*");
-        // Replace multiple spaces with 1
-        // For example the twoBlockComments regex adds spaces 
-        // Source: http://stackoverflow.com/questions/206717/how-do-i-replace-multiple-spaces-with-a-single-space-in-c
-        Regex m_multipleSpaces = new Regex("[ ]{2,}");        
-        // If is inside a block comment currently or not
-        bool m_insideBlockComment = false;
+    {                    
+        ShaderParser m_shaderParser = new ShaderParser();
+        ShaderStore m_shaderStore = new ShaderStore();
 
         // How many files in total has been tried to convert
         public int Converted { get; set; } = 0;
@@ -32,8 +19,7 @@ namespace glsl_babylon.classes
         public int Success { get; set; } = 0;
         // How many failed
         public int Failed { get; set; } = 0;
-
-        public bool AddShaderStoreName { get; set; } = true;
+        
         /// <summary>
         /// If convertFolder should do it recursively or just the input folder
         /// </summary>
@@ -44,78 +30,13 @@ namespace glsl_babylon.classes
         /// -1 is until no more folders
         /// </summary>
         public int RecursiveDepth { get; set; } = 2;
-        /// <summary>
-        /// If GetOutput should add Environment.NewLine or not
-        /// </summary>
-        public bool DoMinify { get; set; } = false;
 
-        /// <summary>
-        /// Removed the first part 'c' 
-        /// Removes any argument actions like --r
-        /// </summary>
-        /// <param name="a_arguments"></param>
-        /// <returns></returns>
-        public string CheckAndCleanArguments( string a_arguments)
+        public void ParseSettings(ConverterSettings a_settings)
         {
-            string[] parts = a_arguments.Split(' ');
+            DoRecursiveFolders = a_settings.DoRecursiveFolders;
+            RecursiveDepth = a_settings.RecursiveDepth;
 
-            // Reset options before each Convert
-            DoRecursiveFolders = false;
-            DoMinify = false;
-
-            string output = "";
-
-            for (int i = 1; i < parts.Length; i++)
-            {
-                string part = parts[i];
-
-                if (part == RecursiveAction)
-                {
-                    DoRecursiveFolders = true;
-                    // Check for potential depth
-                    if (i + 1 < parts.Length)
-                    {
-                        string depthpart = parts[i + 1];
-                        int depth;
-                        // Could in theory do i++ but if a file was a digit it'd get removed from output
-                        if (int.TryParse(depthpart, out depth))
-                        {
-                            // -1, -2, -3  all mean the same thing
-                            if (depth < 0)
-                            {
-                                depth = -1;
-                            }
-                            RecursiveDepth = depth;
-                        }                      
-                    }
-
-                }
-                else if (part == MinifyAction)
-                {
-                    DoMinify = true;
-                }
-                else if (part != "")
-                {
-                    // On first part don't add a " "
-                    if (output == "")
-                    {
-                        output = part;
-                    }
-                    // Add the space for all consecutive ones!
-                    else
-                    {
-                        output += " " + part;
-                    }
-                }
-            }
-
-            if (output == "")
-            {
-                // Get current working directory
-                output = AppContext.BaseDirectory;                
-            }
-
-            return output;
+            m_shaderStore.DoMinify = a_settings.DoMinify;
         }
 
         /// <summary>
@@ -124,28 +45,28 @@ namespace glsl_babylon.classes
         /// <param name="a_arguments"></param>
         public void Convert(string a_arguments)
         {
-            string[] parts = CheckAndCleanArguments(a_arguments).Split(' ');
-
+            ConverterSettings settings = new ConverterSettings(a_arguments);
+            ParseSettings(settings);
+            
             Converted = Success = Failed = 0;
 
             // Try catch since we're doing IO stuff!
             try
             {
-                for (int i = 0; i < parts.Length; ++i)
+                foreach (string file in settings.Files)
                 {
                     // If folder "test" exists it will convert that.
                     // If files with test.vertex.fx | test.fragment.fx exists it will convert those  
                     // Then it will convert the whole testfolder and the test.vertex.fx & test.fragment.fx
-                    string part = parts[i];
                     
+
                     // Convert a potential folder
-                    bool convertedFolder = TryConvertFolder(part, 0);                    
-                    
+                    bool convertedFolder = TryConvertFolder(file, 0);
+
                     // Check if the part ends with .fx and it wasn't a folder called *.fx      
                     // Also check if it ends with .fragment or .vertex          
-                    bool convertedFiles = TryConvertFxFile(part);
-
-                }
+                    bool convertedFiles = TryConvertFxFile(file);
+                }                
 
                 if (Converted > 0)
                 {
@@ -178,32 +99,22 @@ namespace glsl_babylon.classes
                     // Seems .net core doesn't take a filename as input?             
                     using (StreamReader sr = new StreamReader(fs, Encoding.UTF8))
                     {
-                        while (!sr.EndOfStream)
-                        {
-                            string line = sr.ReadLine();
-
-                            string result = ParseLine(line).Trim();
-
-                            if (!string.IsNullOrWhiteSpace(result))
-                            {
-                                lines.Add(result);
-                            }
-                        }                        
+                        m_shaderParser.ParseFile(sr, lines);                
                     }
                 }
 
                 // If there are no lines it failed to convert
                 if (lines.Count > 0)
-                {
-                    
+                {                    
                     using (FileStream fs = new FileStream(a_filename + ".output", FileMode.Create))
                     {
                         // TODO: Implement automatic encoding detection?
                         // http://stackoverflow.com/questions/3825390/effective-way-to-find-any-files-encoding
                         using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
                         {
-                            string shaderStoreName = GetShaderStoreName( a_filename );
-                            sw.Write(GetOutput(lines, shaderStoreName));
+                            string shaderStoreName = m_shaderStore.GetShaderStoreName( a_filename );
+                            string shaderOutput = m_shaderStore.GetOutput(lines, shaderStoreName);
+                            sw.Write(shaderOutput);
                         }
                     }
                     // Before returning true increase successful convertion!
@@ -220,87 +131,7 @@ namespace glsl_babylon.classes
             // If failing then increase failures
             Failed++;
             return false;
-        }         
-              
-        /// <summary>
-        /// Get the babylon shaderstore output
-        /// </summary>
-        /// <param name="a_values"></param>
-        /// <returns></returns>
-        public string GetOutput(List<string> a_values, string a_storeName)
-        {            
-            StringBuilder sb = new StringBuilder();
-
-            if (a_storeName != "")
-            {
-                sb.AppendFormat("BABYLON.Effect.ShadersStore[\"{0}\"]=", a_storeName);
-                if (!DoMinify)
-                {
-                    sb.Append(Environment.NewLine);
-                }
-            }
-
-            for (int i = 0; i < a_values.Count; i++)
-            {
-                string value = m_multipleSpaces.Replace(a_values[i], " ");
-                // Reason for adding Environment.NewLine is so that when you copy-paste into your editor it'll be on a new line!
-                if (i < a_values.Count - 1)
-                {
-                    if (!DoMinify)
-                    {
-                        // "glsl"+\n
-                        sb.AppendFormat("\"{0}\"+{1}", value, Environment.NewLine);
-                    }
-                    else
-                    {
-                        // "glsl"+
-                        sb.AppendFormat("\"{0}\"+", value);
-                    }                   
-                }
-                else
-                {
-                    // "glsl";
-                    sb.AppendFormat("\"{0}\";", value);
-                }                
-            }
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Gets the shaderStore name for an input file.
-        /// Input: exampleName.fragment.fx
-        /// Output: ExampleNameFragmentShader
-        /// </summary>
-        /// <param name="a_filename"></param>
-        /// <returns></returns>
-        public string GetShaderStoreName( string a_filename)
-        {
-            string name = "";
-
-            if (AddShaderStoreName)
-            {
-                a_filename = a_filename.Split(new char[] { '/', '\\' }).Last();
-                string[] parts = a_filename.Split('.');
-                // Length - 1 to discard fx since it's replaced by Shader
-                for (int i = 0; i < parts.Length - 1; i++)
-                {
-                    string part = parts[i];
-                    
-                        // Capitalize the first character
-                        name += char.ToUpper(part[0]);
-
-                    if (part.Length > 1)
-                    {
-                        // Add the rest
-                        name += part.Substring(1);
-                    }                      
-                }
-                name += "Shader";
-            }
-
-            return name;
-        }
+        }       
 
         /// <summary>
         /// Converts all files in a directory and recursively too.
@@ -309,6 +140,7 @@ namespace glsl_babylon.classes
         /// <returns></returns>
         public bool TryConvertFolder(string a_foldername, int a_depth)
         {
+            // Set default to false and if at least 1 file succeeds it will return true
             bool fileSuccess = false;
             bool folderSuccess = false;
             if (Directory.Exists( a_foldername))
@@ -331,7 +163,10 @@ namespace glsl_babylon.classes
                     foreach (string subdirectory in subdirectories)
                     {
                         // Recursively call this function and increase depth by 1
-                        TryConvertFolder(subdirectory, a_depth + 1);
+                        if ( TryConvertFolder(subdirectory, a_depth + 1))
+                        {
+                            folderSuccess = true;
+                        }
                     }
                 }
             }            
@@ -339,61 +174,7 @@ namespace glsl_babylon.classes
             return fileSuccess || folderSuccess;
         }
 
-        private string ParseLine( string a_line)
-        {            
-            string result = "";
-            // If not a block comment is active
-            if (!m_insideBlockComment)
-            {
-                a_line = m_twoBlockComments.Replace(a_line, "*/ /*");
-                a_line = m_lineComment.Replace(a_line, "");
-                a_line = a_line.Trim();
-
-                // Check if line contains block comment after line comment removal
-                if (a_line.Contains("/*"))
-                {
-                    m_insideBlockComment = true;
-
-                    int startIndex = a_line.IndexOf("/*");
-                    // Check if the line contains */ aswell
-                    // float x = 1.0; /* comment */
-                    if (a_line.Contains( "*/"))
-                    {        
-                        // Add +2 to get the point after /*                
-                        int endIndex = a_line.IndexOf("*/")+2 ;
-                        string part1 = a_line.Substring(0, startIndex);
-                        string part2 = a_line.Substring(endIndex);
-
-                        m_insideBlockComment = false;
-                        // Do another parse 
-                        // For example 
-                        // float x = 1.0; /* comment */ float y = 1.0; /* 2ndComment */
-                        result = ParseLine(part1 + part2);
-                    }
-                    else
-                    {
-                        result = a_line.Substring(0, startIndex);
-                    }
-                }
-                else
-                {
-                    result = a_line;
-                }
-            }            
-            else
-            {
-                // if block comment is active check if the current line contains */
-                if (a_line.Contains("*/"))
-                {
-                    // If so substring it away and then parse line again
-                    int endIndex = a_line.IndexOf("*/") + 2;
-                    m_insideBlockComment = false;
-                    result = ParseLine(a_line.Substring(endIndex));
-                }
-            }
-
-            return result;
-        }
+        
 
         /// <summary>
         /// Try first to convert input filename
