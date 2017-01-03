@@ -13,28 +13,33 @@ namespace glsl_babylon.classes
         private bool m_insideBlockComment = false;
 
         // Courtesy of James0x57
-        private Regex m_lineComment = new Regex(@"\/\/.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        private static Regex LineComment = new Regex(@"\/\/.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
         // This is to separate instances of *//* that the lineComment would remove completly
         // No one probably writes /* comment *//* second comment */ but hey!
-        private Regex m_twoBlockComments = new Regex(@"\*\/\/\*");
-        
+        private static Regex TwoBlockComments = new Regex(@"\*\/\/\*", RegexOptions.Compiled);
 
-
-
+        // Replace multiple spaces with 1
+        // For example the twoBlockComments regex adds spaces 
+        // Source: http://stackoverflow.com/questions/206717/how-do-i-replace-multiple-spaces-with-a-single-space-in-c
+        private static Regex MultipleSpaces = new Regex("[ ]{2,}", RegexOptions.Compiled);
 
         public void ParseFile(StreamReader a_stream, List<string> a_lines)
         {
-            while (!a_stream.EndOfStream)
+            if (a_stream != null)
             {
-                string line = a_stream.ReadLine();
-
-                string result = ParseLine(line).Trim();
-
-                if (!string.IsNullOrWhiteSpace(result))
+                while (!a_stream.EndOfStream)
                 {
-                    a_lines.Add(result);
+                    string line = a_stream.ReadLine();
+
+                    string result = ParseLine(line).Trim();
+
+                    if (!string.IsNullOrWhiteSpace(result))
+                    {
+                        result = MultipleSpaces.Replace(result, " ");
+                        a_lines.Add(result);
+                    }
                 }
-            }
+            }            
         }
 
         /// <summary>
@@ -48,8 +53,8 @@ namespace glsl_babylon.classes
             // If not a block comment is active
             if (!m_insideBlockComment)
             {
-                a_line = m_twoBlockComments.Replace(a_line, "*/ /*");
-                a_line = m_lineComment.Replace(a_line, "");
+                a_line = TwoBlockComments.Replace(a_line, "*/ /*");
+                a_line = LineComment.Replace(a_line, "");
                 a_line = a_line.Trim();
 
                 // Check if line contains block comment after line comment removal

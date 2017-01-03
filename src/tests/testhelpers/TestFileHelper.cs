@@ -25,6 +25,19 @@ namespace tests.testhelpers
 
             return content;
         }
+
+        public static StreamReader GetFileContentStream( string a_file )
+        {
+            if (File.Exists(a_file))
+            {
+                FileStream fs = new FileStream(a_file, FileMode.Open);                
+                StreamReader sr = new StreamReader(fs, Encoding.UTF8);                    
+                return sr;
+                    
+            }
+
+            return null;
+        }
         
         public static void WriteFile( string a_file, string a_content, bool a_append = false)
         {

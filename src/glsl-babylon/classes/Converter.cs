@@ -12,6 +12,7 @@ namespace glsl_babylon.classes
     {                    
         ShaderParser m_shaderParser = new ShaderParser();
         ShaderStore m_shaderStore = new ShaderStore();
+        JSFileUpdator m_jsFileUpdator = new JSFileUpdator();
 
         // How many files in total has been tried to convert
         public int Converted { get; set; } = 0;
@@ -24,6 +25,9 @@ namespace glsl_babylon.classes
         /// If convertFolder should do it recursively or just the input folder
         /// </summary>
         public bool DoRecursiveFolders { get; set; } = false;
+
+        public bool EditJavascriptFiles { get; set; } = false;
+
         /// <summary>
         /// How many folders deep to do the recursive action.
         /// For example if a user mistakenly writes "/" well we don't want to loop through whole system!
@@ -35,6 +39,7 @@ namespace glsl_babylon.classes
         {
             DoRecursiveFolders = a_settings.DoRecursiveFolders;
             RecursiveDepth = a_settings.RecursiveDepth;
+            EditJavascriptFiles = a_settings.EditJavascriptFiles;
 
             m_shaderStore.DoMinify = a_settings.DoMinify;
         }
@@ -47,6 +52,11 @@ namespace glsl_babylon.classes
         {
             ConverterSettings settings = new ConverterSettings(a_arguments);
             ParseSettings(settings);
+
+            if ( EditJavascriptFiles)
+            {
+                m_jsFileUpdator.FindJavascriptFiles(settings.Files, RecursiveDepth);
+            }
             
             Converted = Success = Failed = 0;
 

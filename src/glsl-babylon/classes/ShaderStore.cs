@@ -9,12 +9,7 @@ namespace glsl_babylon.classes
 {
     public class ShaderStore
     {
-        public static string ShaderStoreSuffix = "Shader";
-
-        // Replace multiple spaces with 1
-        // For example the twoBlockComments regex adds spaces 
-        // Source: http://stackoverflow.com/questions/206717/how-do-i-replace-multiple-spaces-with-a-single-space-in-c
-        private Regex m_multipleSpaces = new Regex("[ ]{2,}");
+        public static string ShaderStoreSuffix = "Shader";        
 
         public bool AddShaderStoreName { get; set; } = true;
         /// <summary>
@@ -42,7 +37,8 @@ namespace glsl_babylon.classes
 
             for (int i = 0; i < a_values.Count; i++)
             {
-                string value = m_multipleSpaces.Replace(a_values[i], " ");
+                
+                string value = a_values[i];
                 // Reason for adding Environment.NewLine is so that when you copy-paste into your editor it'll be on a new line!
                 if (i < a_values.Count - 1)
                 {
@@ -57,6 +53,7 @@ namespace glsl_babylon.classes
                         sb.AppendFormat("\"{0}\"+", value);
                     }
                 }
+                // The last item, add the ;
                 else
                 {
                     // "glsl";

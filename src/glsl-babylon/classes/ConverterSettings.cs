@@ -11,9 +11,17 @@ namespace glsl_babylon.classes
 
         public const string MinifyAction = "--minify";
 
+        public const string EditJavascriptFilesAction = "--editjs";
+
         public bool DoRecursiveFolders { get; private set; } = false;
         public int RecursiveDepth { get; private set; } = 2;
         public bool DoMinify { get; private set; } = false;
+        /// <summary>
+        /// If the converter should edit javascript files when a file is converted.
+        /// Meaning it directly would alter for example test.js and replace the BABYLON.ShaderStore["TestVertexShader"] = ""; 
+        /// With the new data.
+        /// </summary>
+        public bool EditJavascriptFiles { get; set; } = false;
 
         public List<string> Files { get; private set; } = new List<string>();
 
@@ -58,6 +66,10 @@ namespace glsl_babylon.classes
                 else if (part == MinifyAction)
                 {
                     DoMinify = true;
+                }
+                else if (part == EditJavascriptFilesAction)
+                {
+                    EditJavascriptFiles = true;
                 }
                 else if (part != "")
                 {
