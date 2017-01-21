@@ -26,6 +26,8 @@ namespace glsl_babylon.classes
         /// </summary>
         private string Arguments { get; set; }
 
+        private bool FirstAction { get; set; } = true;
+
         private IConverter m_converter;
         private Watcher m_watcher;
 
@@ -56,21 +58,30 @@ namespace glsl_babylon.classes
             }
         }
 
+        public void PrintActions()
+        {
+            Console.WriteLine("Available actions");
+            Print(String.Format("'{0} [name]'", ConvertAction), ConsoleColor.Cyan);
+            Console.WriteLine(" - One time conversion");
+            Print(String.Format("'{0} [foldername]'", WatchAction), ConsoleColor.Magenta);
+            Console.WriteLine(" - Watches a folder for changes");
+            Print(String.Format("'{0}'", ExitAction), ConsoleColor.Yellow);
+            Console.WriteLine(" - Exit");
+        }
+
         public void GetUserAction()
         {
-            SelectedAction = Action.None;            
+            SelectedAction = Action.None;
+
+            Console.WriteLine();
+            if (FirstAction)
+            {
+                PrintActions();
+                FirstAction = false;
+            }            
+
             while (SelectedAction == Action.None)
             {
-                Console.WriteLine();
-                Console.WriteLine("Available actions");
-                Print( String.Format( "'{0} [name]'", ConvertAction), ConsoleColor.Cyan);           
-                Console.WriteLine(" - One time conversion" );
-                Print(String.Format("'{0} [foldername]'", WatchAction), ConsoleColor.Magenta);
-                Console.WriteLine(" - Watches a folder for changes");
-                Print(String.Format("'{0}'", ExitAction), ConsoleColor.Yellow);
-                Console.WriteLine(" - Exit");
-                
-
                 Console.Write("Action: ");
                 Arguments = Console.ReadLine();
 

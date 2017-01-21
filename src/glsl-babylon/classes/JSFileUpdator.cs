@@ -11,7 +11,7 @@ namespace glsl_babylon.classes
     public class JSFileUpdator
     {
         public const string BackupRelativePath = "glsl-babylonshader-backups";
-        public const string ShaderStoreVariable = "babylon.effect.shaderstore";
+        public const string ShaderStoreVariable = "babylon.effect.shadersstore";
 
 
         public Dictionary<string, ShaderJSFiles> ShaderStores { get; set; }
@@ -58,7 +58,7 @@ namespace glsl_babylon.classes
         {            
 
             int shaderStoreNameIndex = a_content.IndexOf(a_shaderStoreName);
-            int nextShaderStore = a_content.IndexOf(ShaderStoreVariable);
+            int nextShaderStore = a_content.IndexOf(ShaderStoreVariable, StringComparison.OrdinalIgnoreCase);
 
             if (shaderStoreNameIndex != -1 && (nextShaderStore == -1 || (shaderStoreNameIndex < nextShaderStore)))
             {                
@@ -127,21 +127,19 @@ namespace glsl_babylon.classes
                 // 2. Find the startpos and endpos to replace text with
                 // 3. write new shaderOutput at that position                
 
-                string content = File.ReadAllText(a_file);
-                // Don't really have to use lowercase but incase someone imported it as Babylon it still finds it now. 
-                string contentLower = content.ToLower();
+                string content = File.ReadAllText(a_file);                
 
                 List<int> startIndices = new List<int>();
                 List<int> lengths = new List<int>();                
 
-                int startIndex = contentLower.IndexOf(ShaderStoreVariable);
+                int startIndex = content.IndexOf(ShaderStoreVariable, StringComparison.OrdinalIgnoreCase);
                 int contentIndex = 0;
 
                 while (startIndex != -1)
                 {
                     contentIndex += startIndex + ShaderStoreVariable.Length;
-                    string startContent = contentLower.Substring(contentIndex);
-                    int length = GetShaderStoreLength(startContent, startIndex, a_shaderStoreName.ToLower());
+                    string startContent = content.Substring(contentIndex);
+                    int length = GetShaderStoreLength(startContent, startIndex, a_shaderStoreName);
 
                     if (length != -1)
                     {
@@ -151,9 +149,8 @@ namespace glsl_babylon.classes
                         lengths.Add(length);
                     }
 
-                    startIndex = startContent.IndexOf(ShaderStoreVariable);
-                }
-                
+                    startIndex = startContent.IndexOf(ShaderStoreVariable, StringComparison.OrdinalIgnoreCase);
+                }                
                 
                 if (startIndices.Count > 0)
                 {
@@ -177,6 +174,7 @@ namespace glsl_babylon.classes
 
                     File.WriteAllText(a_file, newContent);
 
+                    Application.PrintLine(String.Format("Updated javascript file {0} with new shadersstore code.", a_file), ConsoleColor.White);
                     return true;
                 }                              
             }

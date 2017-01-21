@@ -34,8 +34,7 @@ namespace glsl_babylon.classes
             if (!m_watchedPaths.ContainsKey( a_path ))
             {                
                 if (Directory.Exists( a_path))
-                {
-                    //FileSystemWatcher watcher = new FileSystemWatcher();
+                {                    
                     watcher = new FileSystemWatcher();
                     watcher.Path = a_path;
                     // Only watch .fx files
@@ -53,7 +52,13 @@ namespace glsl_babylon.classes
                     watcher.Renamed += new RenamedEventHandler(OnRenamed);
 
                     m_watchedPaths.Add(a_path, watcher);
+
+                    Application.PrintLine(String.Format("Added watcher for folder {0}", a_path), ConsoleColor.White);
                 }
+            }
+            else
+            {
+                Application.PrintLine(String.Format("Folder already being watched: {0}", a_path), ConsoleColor.Yellow);
             }
         }
 

@@ -2,9 +2,9 @@
     console.log("world!");
 }
 
-BABYLON.Effect.ShaderStore["TestVertexShader"] = "test";
+BABYLON.Effect.ShadersStore["TestVertexShader"] = "test";
 
 var distraction = "look over there, a unicorn!";
 
-BABYLON.Effect.ShaderStore["TestFragmentShader"] = "";
+BABYLON.Effect.ShadersStore["TestFragmentShader"] = "";
 

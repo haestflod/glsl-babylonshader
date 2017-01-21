@@ -15,7 +15,10 @@ namespace glsl_babylon.classes
         /// </summary>
         // Modified source from: http://stackoverflow.com/questions/23314575/regex-extract-list-of-strings-between-two-strings
         // Changed prefix and added ' or " instead of just "
-        public static Regex ShaderStoreKeyRegex = new Regex(@"(?<=BABYLON\.Effect\.ShaderStore\[(\""|'))[^\""]+(?=(\""|')\])|(?<=\[)[^']+(?='\])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        public static Regex ShaderStoreKeyRegex = new Regex(@"(?<=BABYLON\.Effect\.ShadersStore\[(\""|'))[^\""]+(?=(\""|')\])|(?<=\[)[^']+(?='\])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        private HashSet<string> m_searchedFolders = new HashSet<string>();
+        
         /// <summary>
         /// Find all javascript files in the input folders
         /// </summary>
@@ -23,14 +26,16 @@ namespace glsl_babylon.classes
         /// <param name="a_maxDepth">The maxdepth to search for folders</param>
         public Dictionary<string, ShaderJSFiles> FindJavascriptFiles(List<string> a_folders, int a_maxDepth)
         {
-            Dictionary<string, ShaderJSFiles> shaderStores = new Dictionary<string, ShaderJSFiles>();            
+            Dictionary<string, ShaderJSFiles> shaderStores = new Dictionary<string, ShaderJSFiles>();
+            m_searchedFolders.Clear();
 
             foreach (string path in a_folders)
             {
-                if (Directory.Exists(path))
+                string directoryName = Path.GetDirectoryName(path);
+                if (Directory.Exists(directoryName))
                 {
-                    SearchFolder(path, 0, a_maxDepth, shaderStores);
-                }
+                    SearchFolder(directoryName, 0, a_maxDepth, shaderStores);
+                }                
             }
 
             return shaderStores;
@@ -41,8 +46,14 @@ namespace glsl_babylon.classes
             if (a_depth >= a_maxDepth)
             {
                 return;
+            } 
+            // This can happen if a user supplies multiple paths that end up searching the same folders
+            else if (m_searchedFolders.Contains(a_folder))
+            {
+                return;
             }
-
+            m_searchedFolders.Add(a_folder);
+            // TODO: Typescript files aswell e.t.c.?
             string[] files = Directory.GetFiles(a_folder, "*.js");
 
             foreach (string file in files)
@@ -65,7 +76,7 @@ namespace glsl_babylon.classes
         private void SearchFile(string a_file, Dictionary<string, ShaderJSFiles> a_shaderStore)
         {
             string content = File.ReadAllText(a_file);
-            if (content.IndexOf("babylon.effect.shaderstore", StringComparison.OrdinalIgnoreCase) != -1)
+            if (content.IndexOf("babylon.effect.shadersstore", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 MatchCollection matches = ShaderStoreKeyRegex.Matches(content);
                 foreach (Match match in matches)

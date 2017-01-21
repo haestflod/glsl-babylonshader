@@ -49,7 +49,7 @@ namespace tests.classes
                 Files = new List<string>() { testfile }
             });
             // Start real simple for first test with text output!
-            fileUpdator.TryUpdateFiles("TestVertexShader", "BABYLON.Effect.ShaderStore[\"TestVertexShader\"] = \"test\";");
+            fileUpdator.TryUpdateFiles("TestVertexShader", "BABYLON.Effect.ShadersStore[\"TestVertexShader\"] = \"test\";");
 
             string result = TestFileHelper.GetFileContent(testfile);
 
@@ -69,9 +69,9 @@ namespace tests.classes
             TestFileHelper.CopyFiles(TestFolder, TestCopiedFolder);
 
             // Start real simple for first test with text output!
-            fileUpdator.TryUpdateFiles("TestVertexShader", "BABYLON.Effect.ShaderStore[\"TestVertexShader\"] =\r\n\"attribute vec3 aPosition;\"+\r\n\"attribute vec2 aUV;\";");
+            fileUpdator.TryUpdateFiles("TestVertexShader", "BABYLON.Effect.ShadersStore[\"TestVertexShader\"] =\r\n\"attribute vec3 aPosition;\"+\r\n\"attribute vec2 aUV;\";");
             // Start real simple for first test with text output!
-            fileUpdator.TryUpdateFiles("TestFragmentShader", "BABYLON.Effect.ShaderStore[\"TestFragmentShader\"] = \"changed fragmentshader\";");
+            fileUpdator.TryUpdateFiles("TestFragmentShader", "BABYLON.Effect.ShadersStore[\"TestFragmentShader\"] = \"changed fragmentshader\";");
 
             result = TestFileHelper.GetFileContent(testfile);
 
