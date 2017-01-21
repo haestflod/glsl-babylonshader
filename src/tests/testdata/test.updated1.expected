@@ -1,0 +1,10 @@
+﻿function hello() {
+    console.log("world!");
+}
+
+BABYLON.Effect.ShaderStore["TestVertexShader"] = "test";
+
+var distraction = "look over there, a unicorn!";
+
+BABYLON.Effect.ShaderStore["TestFragmentShader"] = "";
+

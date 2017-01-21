@@ -52,10 +52,7 @@ namespace tests.classes
 
             m_watcher.AddWatcher(WatchDirPath);
 
-            TestFileHelper.WriteFile(WatchDirPath + testfile, Environment.NewLine + "line2", true);
-            //await Task.Run(async () =>
-            //{
-            //    Thread.Sleep(10);
+            TestFileHelper.WriteFile(WatchDirPath + testfile, Environment.NewLine + "line2", true);            
 
 
             await Task.Run(() =>

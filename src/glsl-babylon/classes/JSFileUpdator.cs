@@ -10,72 +10,180 @@ namespace glsl_babylon.classes
 {
     public class JSFileUpdator
     {
-        /// <summary>
-        /// Find the key of the shaderstore
-        /// </summary>
-        // Modified source from: http://stackoverflow.com/questions/23314575/regex-extract-list-of-strings-between-two-strings
-        // Changed prefix and added ' or " instead of just "
-        private static Regex ShaderStoreKeyRegex = new Regex(@"(?<=BABYLON\.ShaderStore\[(\""|'))[^\""]+(?=(\""|')\])|(?<=\[)[^']+(?='\])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        public const string BackupRelativePath = "glsl-babylonshader-backups";
+        public const string ShaderStoreVariable = "babylon.effect.shaderstore";
 
-        public Dictionary<string, ShaderJSFiles> m_shaderStores = new Dictionary<string, ShaderJSFiles>();
 
-        /// <summary>
-        /// Find all javascript files in the input folders
-        /// </summary>
-        /// <param name="a_folders">The list of files/folders</param>
-        /// <param name="a_maxDepth">The maxdepth to search for folders</param>
-        public void FindJavascriptFiles(List<string> a_folders, int a_maxDepth)
+        public Dictionary<string, ShaderJSFiles> ShaderStores { get; set; }
+
+        public void TryUpdateFiles(string a_shaderStoreName, string a_shaderOutput)
         {
-            m_shaderStores.Clear();
-
-            foreach(string path in a_folders)
+            if (ShaderStores.ContainsKey(a_shaderStoreName))
             {
-                if (Directory.Exists(path))
+                ShaderJSFiles jsFiles = ShaderStores[a_shaderStoreName];
+                foreach(string file in jsFiles.Files)
                 {
-                    SearchFolder(path, 0, a_maxDepth);
+                    TryUpdateFile(file, a_shaderStoreName, a_shaderOutput);
                 }
-            }              
+            }
         }
 
-        private void SearchFolder(string a_folder, int a_depth, int a_maxDepth)
+        // Public so easier to unit test!
+        public void BackupFile(string a_file)
         {
-            if (a_depth >= a_maxDepth)
+            string filename = Path.GetFileName(a_file);
+            string directory = BackupRelativePath + "/" + Path.GetDirectoryName(a_file);
+            
+                     
+
+            // Start with it being first backup
+            int currentId = 1;
+
+            string backupname = String.Format("{0}/{1}-{2}.backup", directory, filename, currentId++);
+
+            while ( File.Exists(backupname))
             {
-                return;
+                backupname = String.Format("{0}/{1}-{2}.backup", directory, filename, currentId++);
             }
 
-            string[] files = Directory.GetFiles(a_folder, "*.js");
-
-            foreach(string file in files)
+            if ( !Directory.Exists(directory))
             {
-                SearchFile(file);
+                Directory.CreateDirectory(directory);
             }
 
-            string[] subdirectories = Directory.GetDirectories(a_folder);
+            File.Copy(a_file, backupname, true);
         }
 
-        /// <summary>
-        /// Searches files 
-        /// </summary>
-        /// <param name="a_file"></param>
-        private void SearchFile(string a_file)
-        {
-            string content = File.ReadAllText(a_file);
-            if (content.IndexOf("babylon.shaderstore", StringComparison.OrdinalIgnoreCase ) != -1 )
-            {
-                MatchCollection matches = ShaderStoreKeyRegex.Matches(content);                
-                foreach(Match match in matches)
+        public int GetShaderStoreLength(string a_content, int a_startIndex, string a_shaderStoreName)
+        {            
+
+            int shaderStoreNameIndex = a_content.IndexOf(a_shaderStoreName);
+            int nextShaderStore = a_content.IndexOf(ShaderStoreVariable);
+
+            if (shaderStoreNameIndex != -1 && (nextShaderStore == -1 || (shaderStoreNameIndex < nextShaderStore)))
+            {                
+                char currentQuote = '"';
+                bool firstEqual = false;
+                bool insideQuotes = false;
+
+                string parsed = "";
+
+                for (int i = shaderStoreNameIndex + a_shaderStoreName.Length; i < a_content.Length; i++)
                 {
-                    if (!m_shaderStores.ContainsKey(match.Value))
+                    char letter = a_content[i];
+                    parsed += letter;
+
+                    if ( !firstEqual)
                     {
-                        m_shaderStores.Add(match.Value, new ShaderJSFiles(a_file));
+                        // Without this the code below registered the first quote mark:
+                        // "] = ...
+                        if (letter == '=')
+                        {
+                            firstEqual = true;
+                        }
                     }
                     else
                     {
-                        m_shaderStores[match.Value].AddFile(a_file);
+                        // Reached the end!
+                        if (!insideQuotes)
+                        {
+                            if (letter == ';')
+                            {
+                                // Add ShaderStoreVariable.Length because it was removed from a_content
+                                // +1 to remove the extra ;
+                                return i + ShaderStoreVariable.Length + 1;
+                            }
+                            else if (letter == '\'' || letter == '"')
+                            {
+                                // Check that the previous character isn't \ for backslashing \" \'
+                                if (a_content[i - 1] != '\\')
+                                {
+                                    currentQuote = letter;
+                                    insideQuotes = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (letter == currentQuote)
+                            {
+                                insideQuotes = false;
+                            }
+                        }
                     }
-                }                
+
+                    
+                }
             }
+
+            return -1;
         }
+
+        private bool TryUpdateFile(string a_file, string a_shaderStoreName, string a_shaderOutput)
+        {
+            if ( File.Exists(a_file) )
+            {
+                // 1. Backup current file
+                // 2. Find the startpos and endpos to replace text with
+                // 3. write new shaderOutput at that position                
+
+                string content = File.ReadAllText(a_file);
+                // Don't really have to use lowercase but incase someone imported it as Babylon it still finds it now. 
+                string contentLower = content.ToLower();
+
+                List<int> startIndices = new List<int>();
+                List<int> lengths = new List<int>();                
+
+                int startIndex = contentLower.IndexOf(ShaderStoreVariable);
+                int contentIndex = 0;
+
+                while (startIndex != -1)
+                {
+                    contentIndex += startIndex + ShaderStoreVariable.Length;
+                    string startContent = contentLower.Substring(contentIndex);
+                    int length = GetShaderStoreLength(startContent, startIndex, a_shaderStoreName.ToLower());
+
+                    if (length != -1)
+                    {
+                        // Remove ShaderStoreVariable.Length as it was added earlier
+                        startIndices.Add(contentIndex - ShaderStoreVariable.Length);
+                        // The length has the SSV.Length added
+                        lengths.Add(length);
+                    }
+
+                    startIndex = startContent.IndexOf(ShaderStoreVariable);
+                }
+                
+                
+                if (startIndices.Count > 0)
+                {
+                    // Only do backup of file if any changes should be made
+                    BackupFile(a_file);
+                    string newContent = "";
+                    int currentIndex = 0;
+
+                    for (int i = 0; i < startIndices.Count; i++)
+                    {
+                        startIndex = startIndices[i];
+                        int length = lengths[i];
+
+                        newContent += content.Substring(currentIndex, startIndex);
+                        newContent += a_shaderOutput;
+
+                        currentIndex = startIndex + length;
+                    }
+
+                    newContent += content.Substring(currentIndex);
+
+                    File.WriteAllText(a_file, newContent);
+
+                    return true;
+                }                              
+            }
+
+            return false;
+        }
+
+        
     }
 }

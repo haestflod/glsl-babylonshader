@@ -102,7 +102,7 @@ namespace glsl_babylon.classes
                 case Action.Convert:
                     m_converter.Convert(Arguments);
                     break;
-                case Action.Watch:
+                case Action.Watch:                    
                     m_watcher.Watch(Arguments);
                     break;
             }

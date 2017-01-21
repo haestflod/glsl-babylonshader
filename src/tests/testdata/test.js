@@ -2,7 +2,7 @@
     console.log("world!");
 }
 
-BABYLON.ShaderStore["TestVertexShader"] =
+BABYLON.Effect.ShaderStore["TestVertexShader"] =
 "attribute vec3 aPosition;"+
 "attribute vec2 aUV;"+
 "varying vec3 vPosition;"+
@@ -25,5 +25,5 @@ BABYLON.ShaderStore["TestVertexShader"] =
 
 var distraction = "look over there, a unicorn!";
 
-BABYLON.ShaderStore["TestFragmentShader"] = "";
+BABYLON.Effect.ShaderStore["TestFragmentShader"] = "";
 

@@ -28,6 +28,8 @@ namespace glsl_babylon.classes
 
         public bool EditJavascriptFiles { get; set; } = false;
 
+        public bool IsWatchingFiles { get; set; } = false;
+
         /// <summary>
         /// How many folders deep to do the recursive action.
         /// For example if a user mistakenly writes "/" well we don't want to loop through whole system!
@@ -53,9 +55,10 @@ namespace glsl_babylon.classes
             ConverterSettings settings = new ConverterSettings(a_arguments);
             ParseSettings(settings);
 
-            if ( EditJavascriptFiles)
+            if (EditJavascriptFiles)
             {
-                m_jsFileUpdator.FindJavascriptFiles(settings.Files, RecursiveDepth);
+                JSFileFinder jsFileFinder = new JSFileFinder();
+                m_jsFileUpdator.ShaderStores = jsFileFinder.FindJavascriptFiles(settings.Files, RecursiveDepth);
             }
             
             Converted = Success = Failed = 0;
@@ -125,6 +128,11 @@ namespace glsl_babylon.classes
                             string shaderStoreName = m_shaderStore.GetShaderStoreName( a_filename );
                             string shaderOutput = m_shaderStore.GetOutput(lines, shaderStoreName);
                             sw.Write(shaderOutput);
+
+                            if (EditJavascriptFiles)
+                            {
+                                m_jsFileUpdator.TryUpdateFiles(shaderStoreName, shaderOutput);
+                            }
                         }
                     }
                     // Before returning true increase successful convertion!

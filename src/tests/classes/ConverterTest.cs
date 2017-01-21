@@ -15,22 +15,25 @@ namespace tests.classes
     {
         private Converter m_converter;
 
+        public const string TestDataPath = "testdata";
+        public const string TestDataCopyPath = "testdatacopy";
         /// <summary>
         /// The file to convert
         /// </summary>
-        private const string TestFileInput = "testdata/test.vertex.fx";
+        private static string TestFileInput = TestDataCopyPath + "/test.vertex.fx";
         /// <summary>
         /// The file that the converter will output, the result of the converter
         /// </summary>
-        private const string TestFileResult = "testdata/test.vertex.fx.output";
+        private static string TestFileResult = TestDataCopyPath + "/test.vertex.fx.output";
         /// <summary>
         /// The file to expected content of the converter
         /// </summary>
-        private const string TestFileExpected = "testdata/test.vertex.fx.expected";
+        private static string TestFileExpected = TestDataCopyPath + "/test.vertex.fx.expected";
 
         [TestInitialize]
         public void Initialize()
         {
+            TestFileHelper.CopyFiles("testdata", "testdatacopy");
             m_converter = new Converter();
         }
 

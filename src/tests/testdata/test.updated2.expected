@@ -1,0 +1,12 @@
+﻿function hello() {
+    console.log("world!");
+}
+
+BABYLON.Effect.ShaderStore["TestVertexShader"] =
+"attribute vec3 aPosition;"+
+"attribute vec2 aUV;";
+
+var distraction = "look over there, a unicorn!";
+
+BABYLON.Effect.ShaderStore["TestFragmentShader"] = "changed fragmentshader";
+

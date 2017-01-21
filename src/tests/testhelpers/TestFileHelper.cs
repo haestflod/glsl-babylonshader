@@ -9,6 +9,32 @@ namespace tests.testhelpers
 {
     public static class TestFileHelper
     {
+        public static void CopyFiles(string a_folder, string a_outputFolder, string a_prefix = "")
+        {
+            string[] files = Directory.GetFiles(a_folder);
+            string[] directories = Directory.GetDirectories(a_folder);
+
+            string outputFolder = a_outputFolder + a_prefix;
+
+            if ( !Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            outputFolder += "/";
+
+            foreach (string file in files)
+            {
+                File.Copy(file, outputFolder + Path.GetFileName(file), true);
+            }
+
+            foreach(string directory in directories)
+            {
+                string directoryName = directory.Split(new char[] { '/', '\\' }).Last();
+                CopyFiles(directory, a_outputFolder, a_prefix + "/" + directoryName);
+            }
+        }
+
         public static string GetFileContent( string a_file)
         {
             string content = "";

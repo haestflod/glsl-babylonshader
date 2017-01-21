@@ -18,7 +18,7 @@ namespace glsl_babylon.classes
         private FileSystemWatcher watcher;
 
         public Watcher(IConverter a_converter)
-        {
+        {           
             m_converter = a_converter;
 
             m_watchedPaths = new Dictionary<string, FileSystemWatcher>();
