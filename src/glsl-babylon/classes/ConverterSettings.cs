@@ -80,7 +80,7 @@ namespace glsl_babylon.classes
             // Get current working directory if files count is 0
             if (Files.Count == 0)
             {                
-                Files.Add(AppContext.BaseDirectory);
+                Files.Add(Application.WorkingDirectory);
             }
         }
     }

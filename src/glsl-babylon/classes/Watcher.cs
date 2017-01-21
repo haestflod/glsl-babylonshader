@@ -53,7 +53,11 @@ namespace glsl_babylon.classes
 
                     m_watchedPaths.Add(a_path, watcher);
 
-                    Application.PrintLine(String.Format("Added watcher for folder {0}", a_path), ConsoleColor.White);
+                    Application.PrintLine(String.Format("Added watcher for folder: {0}", a_path), ConsoleColor.White);
+                }
+                else
+                {
+                    Application.PrintLine(String.Format("Could not find folder: {0}", a_path), ConsoleColor.Red);
                 }
             }
             else
@@ -63,64 +67,16 @@ namespace glsl_babylon.classes
         }
 
         /// <summary>
-        /// Get all the watcher paths from arguments
-        /// </summary>
-        /// <param name="a_arguments"></param>
-        /// <returns></returns>
-        public string CheckAndCleanArguments(string a_arguments)
-        {
-            string[] parts = a_arguments.Split(' ');
-            
-            string output = "";
-            bool hasAddedRoot = false;
-
-            for (int i = 1; i < parts.Length; i++)
-            {
-                string part = parts[i];
-                
-                if (part != "")
-                {
-                    // For / add the current folder path not the root for linux!
-                    if (part == "/" && !hasAddedRoot)
-                    {
-                        output = AppContext.BaseDirectory;
-                        hasAddedRoot = true;
-                    }
-
-                    // On first part don't add a " "
-                    if (output == "")
-                    {
-                        output = part;
-                    }
-                    // Add the space for all consecutive ones!
-                    else
-                    {                        
-                        output += " " + part;
-                    }
-                }
-            }
-
-            if (output == "" && !hasAddedRoot)
-            {
-                // Get current working directory
-                output = AppContext.BaseDirectory;
-                hasAddedRoot = true;
-            }
-
-            return output;
-        }
-
-        /// <summary>
         /// Set up all watchers based off user input
         /// </summary>
         /// <param name="arguments"></param>
         public void Watch( string a_arguments)
-        {
-            string[] parts = CheckAndCleanArguments(a_arguments).Split(' ');
-
-            foreach (string part in parts)
+        {            
+            ConverterSettings settings = new ConverterSettings(a_arguments);
+            // TODO: Update readme.md when watcher can handle recursive folders
+            foreach (string folder in settings.Files)
             {
-                AddWatcher(part);
+                AddWatcher(folder);
             }
         }  
 

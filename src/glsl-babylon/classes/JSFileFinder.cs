@@ -43,7 +43,7 @@ namespace glsl_babylon.classes
 
         private void SearchFolder(string a_folder, int a_depth, int a_maxDepth, Dictionary<string, ShaderJSFiles> a_shaderStores)
         {
-            if (a_depth >= a_maxDepth)
+            if (a_depth >= a_maxDepth && a_maxDepth != -1)
             {
                 return;
             } 

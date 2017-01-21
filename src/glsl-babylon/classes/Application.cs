@@ -9,7 +9,9 @@ namespace glsl_babylon.classes
     {
         public const string ConvertAction = "c";
         public const string WatchAction = "w";
-        public const string ExitAction = "x"; 
+        public const string ExitAction = "x";
+
+        public static string WorkingDirectory = System.IO.Directory.GetCurrentDirectory();
 
         enum Action
         {

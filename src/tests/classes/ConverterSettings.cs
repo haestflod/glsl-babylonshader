@@ -42,10 +42,10 @@ namespace tests.classes
             Assert.IsTrue(settings.Files[0] == "test" && settings.Files[1] == "test2", "Files are expected values");
 
             settings = new ConverterSettings("c");
-            Assert.IsTrue(settings.Files[0] == AppContext.BaseDirectory, "Result should be as expected 2");
+            Assert.IsTrue(settings.Files[0] == Application.WorkingDirectory, "Result should be as expected 2");
 
             settings = new ConverterSettings("c --r");
-            Assert.IsTrue(settings.Files[0] == AppContext.BaseDirectory, "Result should be as expected 3");
+            Assert.IsTrue(settings.Files[0] == Application.WorkingDirectory, "Result should be as expected 3");
 
             settings = new ConverterSettings("c test --r --minify test2  test3");
             Assert.IsTrue(settings.Files.Count == 3, "Files count should be as expected");
